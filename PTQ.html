@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Опитувальник тиків (PTQ)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* GLOBAL RESET & VARIABLES */
+        :root {
+            --primary: #2563eb;
+            --primary-light: #eff6ff;
+            --danger: #dc2626;
+            --danger-light: #fef2f2;
+            --text-main: #1f2937;
+            --text-light: #6b7280;
+            --bg-page: #f3f4f6;
+            --bg-card: #ffffff;
+            --border: #e5e7eb;
+            --radius: 12px;
+        }
+
+        * {
+            box-sizing: border-box; /* Важливо: запобігає вилазити за межі через рамки */
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-page);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            padding-bottom: 120px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .container { max-width: 700px; margin: 0 auto; }
+
+        /* HEADER */
+        .header-card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin-bottom: 24px;
+            border-top: 6px solid var(--primary);
+        }
+        h1 { margin: 0 0 8px 0; font-size: 22px; color: #111827; }
+        p.desc { margin: 0; color: var(--text-light); line-height: 1.5; font-size: 14px; }
+
+        /* INPUTS */
+        .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--text-main); margin-bottom: 6px; text-transform: uppercase; }
+        .form-control { width: 100%; padding: 12px; border: 2px solid var(--border); border-radius: 8px; font-size: 16px; }
+        .form-control:focus { outline: none; border-color: var(--primary); }
+
+        /* SECTION HEADERS */
+        .section-title {
+            font-size: 18px; font-weight: 700; margin: 32px 0 16px 0;
+            color: #374151; display: flex; align-items: center;
+        }
+        .section-badge {
+            background: var(--primary); color: white; width: 28px; height: 28px;
+            border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+            margin-right: 12px; font-size: 14px;
+        }
+
+        /* TIC CARD */
+        .tic-card {
+            background: var(--bg-card); border-radius: var(--radius); margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden;
+            border: 1px solid transparent; transition: all 0.2s;
+        }
+        .tic-card.active { border-color: var(--primary); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15); }
+
+        /* CARD HEADER */
+        .tic-header { padding: 18px 20px; display: flex; align-items: center; cursor: pointer; }
+        .custom-checkbox {
+            width: 24px; height: 24px; border: 2px solid #d1d5db; border-radius: 6px;
+            margin-right: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+            transition: all 0.2s; background: #fff;
+        }
+        .tic-card.active .custom-checkbox { background-color: var(--primary); border-color: var(--primary); }
+        .custom-checkbox svg { width: 16px; height: 16px; color: white; transform: scale(0); transition: transform 0.2s; }
+        .tic-card.active .custom-checkbox svg { transform: scale(1); }
+        .tic-title { font-size: 17px; font-weight: 500; flex-grow: 1; }
+
+        /* DETAILS (Hidden part) */
+        .tic-details {
+            display: none; padding: 0 20px 24px 20px;
+            background-color: #fcfcfc; border-top: 1px solid var(--border);
+            animation: slideDown 0.3s ease-out;
+        }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .question-label { font-size: 14px; font-weight: 600; color: var(--text-light); margin: 20px 0 10px 0; display: block; }
+
+        /* --- BUTTONS STYLING (PC Default) --- */
+        .btn-group {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr); /* PC: 4 in a row */
+            gap: 12px;
+            width: 100%;
+        }
+
+        .radio-btn-label { cursor: pointer; position: relative; display: block; width: 100%; }
+        .radio-btn-label input { position: absolute; opacity: 0; width: 0; height: 0; }
+
+        .btn-tile {
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            padding: 12px 8px;
+            background: white; border: 1px solid var(--border); border-radius: 10px;
+            text-align: center; height: 100%; min-height: 60px;
+            transition: all 0.2s;
+            /* Fix for overlap issues: ensure box model is strict */
+            position: relative; 
+            z-index: 1;
+        }
+        .btn-tile-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+        .btn-tile-sub { font-size: 12px; color: #9ca3af; line-height: 1.2; }
+        
+        .radio-btn-label:hover .btn-tile { border-color: #9ca3af; background: #f9fafb; z-index: 2; }
+
+        /* Checked States */
+        .freq-group input:checked + .btn-tile { 
+            background-color: var(--primary-light); border-color: var(--primary); color: var(--primary); 
+            z-index: 5; /* Ensure selected sits on top */
+            box-shadow: 0 0 0 1px var(--primary); /* Extra clear border */
+        }
+        .freq-group input:checked + .btn-tile .btn-tile-sub { color: #60a5fa; }
+        
+        .int-group input:checked + .btn-tile { 
+            background-color: var(--danger-light); border-color: var(--danger); color: var(--danger);
+            z-index: 5;
+            box-shadow: 0 0 0 1px var(--danger);
+        }
+        .int-group input:checked + .btn-tile .btn-tile-sub { color: #f87171; }
+
+        /* FOOTER & MODAL */
+        .footer-bar {
+            position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px); padding: 16px 20px; box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+            display: flex; justify-content: space-between; align-items: center; z-index: 100; border-top: 1px solid var(--border);
+        }
+        .score-val { font-size: 20px; font-weight: 800; color: var(--text-main); margin-left: 4px; }
+        .submit-btn {
+            background-color: #111827; color: white; border: none; padding: 14px 28px;
+            border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
+        .modal-card { background: white; width: 100%; max-width: 400px; border-radius: 16px; padding: 30px; text-align: center; }
+
+        /* --- MOBILE FIXES --- */
+        @media (max-width: 600px) {
+            .input-row { grid-template-columns: 1fr; }
+            .header-card { padding: 20px; }
+            .tic-header { padding: 16px; }
+
+            /* Switch from Grid to Flex Column for better spacing control */
+            .btn-group {
+                display: flex;
+                flex-direction: column;
+                gap: 12px; /* Explicit gap between items */
+            }
+
+            .radio-btn-label {
+                width: 100%;
+                margin-bottom: 0; /* Let gap handle spacing */
+            }
+
+            .btn-tile {
+                flex-direction: row; 
+                justify-content: space-between; 
+                align-items: center;
+                padding: 12px 16px; 
+                min-height: 0;
+                text-align: left;
+                width: 100%;
+            }
+            
+            .btn-tile-title { margin-bottom: 0; font-size: 15px; }
+            .btn-tile-sub { font-size: 13px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-card">
+        <h1>Опитувальник тиків (PTQ)</h1>
+
+        <div class="input-row">
+            <div class="form-group">
+                <label>Ім'я дитини</label>
+                <input type="text" id="childName" class="form-control" placeholder="Введіть ПІБ дитини">
+            </div>
+            <div class="form-group">
+                <label>Дата</label>
+                <input type="date" id="surveyDate" class="form-control">
+            </div>
+            
+            <div class="form-group" style="grid-column: 1 / -1;">
+                <label>ПІБ Батьків (хто заповнює)</label>
+                <input type="text" id="parentName" class="form-control" placeholder="Введіть ваше ім'я">
+            </div>
+        </div>
+        
+    </div>
+
+    <div style="background-color: #f8fafc; border-left: 4px solid #64748b; padding: 16px; margin: 20px 0; border-radius: 4px; font-size: 14px; color: #334155; line-height: 1.5;">
+            <h3 style="margin: 0 0 10px 0; font-size: 15px; color: #0f172a; font-weight: 700;">📝 Інструкція по заповненню:</h3>
+            <p style="margin: 0 0 10px 0;">Відмітьте тики, які були у дитини протягом <strong>останнього тижня</strong>. Та оцініть їх:</p>
+            <ul style="margin: 0; padding-left: 20px;">
+                <li style="margin-bottom: 5px;"><strong>Частоту:</strong> оцініть, як часто виникав тик (від пари разів до постійно).</li>
+                <li><strong>Інтенсивність (Сила):</strong>
+                    <ul style="margin-top: 5px; color: #475569;">
+                        <li><strong>1 - Легкі:</strong> слабкі, ледь помітні.</li>
+                        <li><strong>2 - Помітні:</strong> очевидні для оточуючих.</li>
+                        <li><strong>3 - Значні:</strong> дуже помітні, привертають увагу.</li>
+                        <li><strong>4 - Сильні:</strong> болісні або складні рухи.</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+
+    <div class="section-title"><span class="section-badge">1</span> Моторні (Рухові) тики</div>
+    <div id="motor-list"></div>
+
+    <div class="section-title"><span class="section-badge">2</span> Вокальні (Голосові) тики</div>
+    <div id="vocal-list"></div>
+</div>
+
+<div class="footer-bar">
+    <div class="score-display">Бал: <span class="score-val" id="live-score">0</span></div>
+    <button class="submit-btn" id="submitBtn" onclick="submitForm()">ВІДПРАВИТИ</button>
+</div>
+
+<div class="modal-overlay" id="resultModal">
+    <div class="modal-card">
+        <h2>Результат</h2>
+        <div style="font-size:42px; font-weight:800; color:#2563eb; margin-bottom:20px;" id="final-score">0</div>
+        <p id="success-msg" style="color:#059669; display:none; margin-bottom:20px;">✅ Дані успішно збережено!</p>
+        <button class="submit-btn" style="width:100%; background:#e5e7eb; color:#374151;" onclick="closeModal()">Закрити</button>
+    </div>
+</div>
+
+<script>
+    // ==========================================
+    // ВСТАВТЕ ВАШЕ ПОСИЛАННЯ ТУТ:
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwi2onDy3FP3oizx0dTX9yFlBEt5XNvUBttV4IXSRt599VI1eQON4qu_NzVwBYRoR8UGQ/exec'; 
+    // ==========================================
+
+    document.getElementById('surveyDate').valueAsDate = new Date();
+    // ОНОВЛЕНІ СПИСКИ ТИКІВ (Згідно з PDF)
+    const motorTics = [
+        "Кліпання очима", 
+        "Закочування очей/швидкі рухи", 
+        "Посмикування головою", 
+        "Гримаси", 
+        "Рухи ротом/язиком", 
+        "Знизування плечима", 
+        "Рухи руками", 
+        "Рухи ногами", 
+        "Напруження живота/грудей", 
+        "Рухи тазом", 
+        "Екопраксія (повторення жестів)", 
+        "Копропраксія (непристойні жести)", 
+        "Складні моторні комбінації", 
+        "Інші моторні тики"
+    ];
+
+    const vocalTics = [
+        "Хрюкання/Кректання", 
+        "Шморгання носом", 
+        "Фиркання (Fnysningar)", 
+        "Покашлювання", 
+        "Писк/Звуки", 
+        "Звуки тварин", 
+        "Склади/Слова", 
+        "Фрази", 
+        "Ехолалія (повторення слів)", 
+        "Копролалія (лайливі слова)", 
+        "Заїкання/Блокування мови", 
+        "Складні вокальні комбінації", 
+        "Інші вокальні тики"
+    ];
+
+    const freqOpts = [
+        { val: 1, title: "Рідко", sub: "пару разів/тиждень" },
+        { val: 2, title: "Щодня", sub: "кілька разів/день" },
+        { val: 3, title: "Щогодини", sub: "мін. 1 раз/год" },
+        { val: 4, title: "Постійно", sub: "майже завжди" }
+    ];
+    const intOpts = [
+        { val: 1, title: "Легкі", sub: "ледве помітні" },
+        { val: 2, title: "Помітні", sub: "для оточуючих" },
+        { val: 3, title: "Значні", sub: "привертають увагу" },
+        { val: 4, title: "Сильні", sub: "болісні/тяжкі" }
+    ];
+
+    function renderItem(name, idx, type) {
+        return `
+        <div class="tic-card" id="card-${type}-${idx}">
+            <div class="tic-header" onclick="toggleCard('${type}', ${idx})">
+                <div class="custom-checkbox"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg></div>
+                <div class="tic-title">${name}</div>
+                <input type="checkbox" id="chk-${type}-${idx}" style="display:none;">
+            </div>
+            <div class="tic-details" id="det-${type}-${idx}">
+                <label class="question-label">Як часто?</label>
+                <div class="btn-group freq-group">
+                    ${freqOpts.map(o => createBtn(type, idx, 'freq', o)).join('')}
+                </div>
+                <label class="question-label">Наскільки сильно?</label>
+                <div class="btn-group int-group">
+                    ${intOpts.map(o => createBtn(type, idx, 'int', o)).join('')}
+                </div>
+            </div>
+        </div>`;
+    }
+
+    function createBtn(type, idx, cat, opt) {
+        return `
+        <label class="radio-btn-label">
+            <input type="radio" name="${cat}-${type}-${idx}" value="${opt.val}" onchange="updateLiveScore()">
+            <div class="btn-tile">
+                <div class="btn-tile-title">${opt.title}</div>
+                <div class="btn-tile-sub">${opt.sub}</div>
+            </div>
+        </label>`;
+    }
+
+    document.getElementById('motor-list').innerHTML = motorTics.map((t, i) => renderItem(t, i, 'motor')).join('');
+    document.getElementById('vocal-list').innerHTML = vocalTics.map((t, i) => renderItem(t, i, 'vocal')).join('');
+
+    function toggleCard(type, idx) {
+        const chk = document.getElementById(`chk-${type}-${idx}`);
+        const card = document.getElementById(`card-${type}-${idx}`);
+        const det = document.getElementById(`det-${type}-${idx}`);
+        chk.checked = !chk.checked;
+        if(chk.checked) {
+            card.classList.add('active');
+            det.style.display = 'block';
+        } else {
+            card.classList.remove('active');
+            det.style.display = 'none';
+            det.querySelectorAll('input').forEach(r => r.checked = false);
+            updateLiveScore();
+        }
+    }
+
+    function getScores() {
+    let m = 0, v = 0, details = [];
+    const calc = (list, type) => {
+        let sum = 0;
+        list.forEach((_, i) => {
+            if(document.getElementById(`chk-${type}-${i}`).checked) {
+                const f = document.querySelector(`input[name="freq-${type}-${i}"]:checked`);
+                const s = document.querySelector(`input[name="int-${type}-${i}"]:checked`);
+                let val = (f ? +f.value : 0) + (s ? +s.value : 0);
+                if(val) { sum += val; details.push(`${type[0].toUpperCase()}${i+1}:${val}`); }
+            }
+        });
+        return sum;
+    };
+    m = calc(motorTics, 'motor');
+    v = calc(vocalTics, 'vocal');
+    
+    // --- FIX IS HERE: Return m and v ---
+    return { m, v, total: m + v, details }; 
+}
+
+    function updateLiveScore() { document.getElementById('live-score').innerText = getScores().total; }
+
+    function submitForm() {
+        const childName = document.getElementById('childName').value;
+        const parentName = document.getElementById('parentName').value; // Перевірте цей рядок
+
+        if(!childName || !parentName) return alert("Будь ласка, заповніть ім'я дитини та батьків!");
+        
+        const btn = document.getElementById('submitBtn');
+        const s = getScores(); // Ця функція повертає об'єкт { m, v, total, details }
+        
+        btn.disabled = true; btn.innerText = "⏳...";
+        
+        // Перевірте, чи ви передаєте motorScore та vocalScore
+        const payload = { 
+            childName: childName, 
+            parentName: parentName,
+            date: document.getElementById('surveyDate').value, 
+            motorScore: s.m,     // Now this will find the value
+            vocalScore: s.v,     // Now this will find the value
+            totalScore: s.total, 
+            details: s.details 
+        };
+
+        fetch(SCRIPT_URL, {
+            method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'},
+            body: JSON.stringify(payload)
+        }).then(() => showModal(true)).catch(() => { alert("Помилка"); btn.disabled = false; btn.innerText="ВІДПРАВИТИ"; });
+    }
+
+    function showModal(success) {
+        document.getElementById('resultModal').style.display = 'flex';
+        document.getElementById('final-score').innerText = getScores().total;
+        if(success) {
+            document.getElementById('success-msg').style.display = 'block';
+            document.getElementById('submitBtn').innerText = "✅ ГОТОВО";
+        }
+    }
+    function closeModal() { document.getElementById('resultModal').style.display = 'none'; }
+</script>
+</body>
+</html>
