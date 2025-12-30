@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Пошук звіту PTQ</title>
+    <script src="config.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f1f5f9; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
+        h1 { color: #2563eb; margin-bottom: 20px; font-size: 24px; }
+        input { width: 100%; padding: 12px; border: 2px solid #cbd5e1; border-radius: 8px; font-size: 16px; margin-bottom: 15px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #2563eb; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        button:hover { background: #1d4ed8; }
+        button:disabled { background: #94a3b8; cursor: not-allowed; }
+        .error { color: #dc2626; margin-top: 15px; font-size: 14px; background: #fef2f2; padding: 10px; border-radius: 6px; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>Пошук звіту PTQ</h1>
+    <p style="color:#64748b; margin-bottom:20px;">Введіть ID звіту:</p>
+    
+    <input type="text" id="searchId" placeholder="ID..." />
+    <button onclick="findPatient()" id="btnSearch">Знайти</button>
+    <div class="error" id="errorMsg"></div>
+    <a href="index.html" style="display:block; margin-top:20px; color:#64748b; text-decoration:none; font-size:14px;">← Назад</a>
+</div>
+
+<script>
+    window.onload = function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const id = urlParams.get('id');
+        if (id) {
+            document.getElementById('searchId').value = id;
+            findPatient();
+        }
+    };
+
+    function findPatient() {
+        const id = document.getElementById('searchId').value.trim();
+        const btn = document.getElementById('btnSearch');
+        const err = document.getElementById('errorMsg');
+
+        if(!id) return;
+
+        btn.disabled = true; btn.innerText = "Пошук..."; err.style.display = 'none';
+
+        // Use URL from config
+        const url = `${CONFIG.GOOGLE_SCRIPT_URL}?id=${encodeURIComponent(id)}`;
+
+        fetch(url)
+        .then(res => res.json())
+        .then(data => {
+            if(data.error) throw new Error("Звіт не знайдено");
+            
+            // Save to correct local storage key for result.html
+            localStorage.setItem('ptq_result', JSON.stringify(data));
+            window.location.href = 'result.html';
+        })
+        .catch(e => {
+            btn.disabled = false; btn.innerText = "Знайти";
+            err.innerText = e.message; err.style.display = 'block';
+        });
+    }
+</script>
+
+</body>
+</html>

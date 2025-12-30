@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PTQ Digitizer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="config.js"></script>
+    <style>
+        /* MASTER DESIGN SYSTEM */
+        :root {
+            --primary: #2563eb;
+            --primary-light: #eff6ff;
+            --danger: #dc2626;
+            --danger-light: #fef2f2;
+            --text-main: #1f2937;
+            --text-light: #6b7280;
+            --bg-page: #f8fafc;
+            --bg-card: #ffffff;
+            --border: #e2e8f0;
+            --radius: 12px;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-page);
+            color: var(--text-main);
+            margin: 0; padding: 20px; padding-bottom: 120px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .container { max-width: 700px; margin: 0 auto; }
+
+        /* HEADER */
+        .header-card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            margin-bottom: 24px;
+            border-top: 6px solid var(--primary);
+        }
+        h1 { margin: 0 0 8px 0; font-size: 22px; color: #111827; }
+        
+        .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px; }
+        .form-group label { display: block; font-size: 12px; font-weight: 600; color: var(--text-light); margin-bottom: 6px; text-transform: uppercase; }
+        .form-control { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 15px; }
+        
+        /* INSTRUCTIONS */
+        .info-box {
+            background-color: #fff7ed; border: 1px solid #fdba74; 
+            padding: 16px; margin: 20px 0; border-radius: 8px; 
+            font-size: 14px; color: #9a3412; line-height: 1.5;
+        }
+
+        /* SECTION HEADERS */
+        .section-title {
+            font-size: 18px; font-weight: 700; margin: 32px 0 16px 0;
+            color: #374151; display: flex; align-items: center;
+        }
+        .section-badge {
+            background: var(--primary); color: white; width: 28px; height: 28px;
+            border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+            margin-right: 12px; font-size: 14px; font-weight: bold;
+        }
+
+        /* TIC CARD */
+        .tic-card {
+            background: var(--bg-card); border-radius: var(--radius); margin-bottom: 12px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05); overflow: hidden;
+            border: 1px solid var(--border); transition: all 0.2s;
+        }
+        .tic-card.active { border-color: var(--primary); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1); }
+
+        /* CARD HEADER */
+        .tic-header { padding: 16px 20px; display: flex; align-items: center; cursor: pointer; user-select: none;}
+        .custom-checkbox {
+            width: 24px; height: 24px; border: 2px solid #cbd5e1; border-radius: 6px;
+            margin-right: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+            transition: all 0.2s; background: #fff;
+        }
+        .tic-card.active .custom-checkbox { background-color: var(--primary); border-color: var(--primary); }
+        .custom-checkbox svg { width: 16px; height: 16px; color: white; transform: scale(0); transition: transform 0.2s; }
+        .tic-card.active .custom-checkbox svg { transform: scale(1); }
+        .tic-title { font-size: 16px; font-weight: 500; flex-grow: 1; }
+
+        /* DETAILS (Hidden part) */
+        .tic-details {
+            display: none; padding: 0 20px 24px 20px;
+            background-color: #fafafa; border-top: 1px solid var(--border);
+            animation: slideDown 0.2s ease-out;
+        }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .question-label { font-size: 13px; font-weight: 600; color: var(--text-light); margin: 20px 0 10px 0; display: block; }
+
+        /* BUTTON TILES */
+        .btn-group {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; width: 100%;
+        }
+        .radio-label { cursor: pointer; position: relative; width: 100%; }
+        .radio-label input { position: absolute; opacity: 0; width: 0; height: 0; }
+
+        .btn-tile {
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            padding: 10px 4px;
+            background: white; border: 1px solid var(--border); border-radius: 8px;
+            text-align: center; height: 100%; min-height: 50px;
+            transition: all 0.2s;
+        }
+        .btn-tile-title { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+        .btn-tile-sub { font-size: 10px; color: #9ca3af; line-height: 1.1; }
+        
+        /* Checked States */
+        .freq-group input:checked + .btn-tile { 
+            background-color: var(--primary-light); border-color: var(--primary); color: var(--primary); 
+            box-shadow: 0 0 0 1px var(--primary);
+        }
+        .int-group input:checked + .btn-tile { 
+            background-color: var(--danger-light); border-color: var(--danger); color: var(--danger);
+            box-shadow: 0 0 0 1px var(--danger);
+        }
+
+        /* FOOTER */
+        .footer-bar {
+            position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px); padding: 16px 20px; border-top: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center; z-index: 100;
+        }
+        .score-val { font-size: 18px; font-weight: 800; color: var(--text-main); margin-left: 4px; }
+        .submit-btn {
+            background-color: #0f172a; color: white; border: none; padding: 12px 24px;
+            border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .submit-btn:disabled { background-color: #94a3b8; cursor: not-allowed; }
+
+        /* LOADING */
+        #loading-overlay {
+            position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(255,255,255,0.9);
+            z-index: 200; display: none; align-items: center; justify-content: center; flex-direction: column;
+        }
+        .spinner { width: 40px; height: 40px; border: 4px solid #e2e8f0; border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* MOBILE OPTIMIZATION */
+        @media (max-width: 600px) {
+            .input-row { grid-template-columns: 1fr; }
+            .btn-group { display: flex; flex-direction: column; gap: 8px; }
+            .btn-tile { flex-direction: row; justify-content: space-between; padding: 12px 16px; text-align: left; }
+            .btn-tile-title { margin-bottom: 0; font-size: 14px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-card">
+        <h1 id="form-title">Завантаження...</h1>
+        <div class="input-row">
+            <div class="form-group">
+                <label>Ім'я дитини</label>
+                <input type="text" id="childName" class="form-control" placeholder="Введіть ПІБ">
+            </div>
+            <div class="form-group">
+                <label>Дата</label>
+                <input type="date" id="surveyDate" class="form-control">
+            </div>
+            <div class="form-group" style="grid-column: 1 / -1;">
+                <label>Хто заповнює (ПІБ)</label>
+                <input type="text" id="parentName" class="form-control" placeholder="Мама / Тато / Опікун">
+            </div>
+        </div>
+    </div>
+
+    <div class="info-box" id="instructions"></div>
+
+    <div class="section-title"><span class="section-badge">1</span> <span id="title-motor">Моторні тики</span></div>
+    <div id="motor-list"></div>
+
+    <div class="section-title"><span class="section-badge">2</span> <span id="title-vocal">Вокальні тики</span></div>
+    <div id="vocal-list"></div>
+</div>
+
+<div class="footer-bar">
+    <div class="score-display">Поточний бал: <span class="score-val" id="live-score">0</span></div>
+    <button class="submit-btn" id="submitBtn" onclick="submitForm()">ВІДПРАВИТИ</button>
+</div>
+
+<div id="loading-overlay">
+    <div class="spinner"></div>
+    <div style="margin-top:15px; font-weight:600; color:#334155;">Збереження...</div>
+</div>
+
+<script>
+    // --- INIT ---
+    window.onload = function() {
+        if (typeof CONFIG === 'undefined') return alert("Error: config.js not found!");
+        
+        // Populate UI text
+        document.getElementById('form-title').innerText = CONFIG.ui.title;
+        document.getElementById('instructions').innerHTML = CONFIG.ui.instructions;
+        document.getElementById('submitBtn').innerText = CONFIG.ui.btnSubmit;
+        document.getElementById('title-motor').innerText = CONFIG.tics.motor.title;
+        document.getElementById('title-vocal').innerText = CONFIG.tics.vocal.title;
+        document.getElementById('surveyDate').valueAsDate = new Date();
+
+        // Render Lists
+        renderList('motor', CONFIG.tics.motor.items);
+        renderList('vocal', CONFIG.tics.vocal.items);
+    };
+
+    function renderList(type, items) {
+        const container = document.getElementById(`${type}-list`);
+        container.innerHTML = items.map((item, idx) => `
+            <div class="tic-card" id="card-${type}-${idx}">
+                <div class="tic-header" onclick="toggleCard('${type}', ${idx})">
+                    <div class="custom-checkbox">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                    </div>
+                    <div class="tic-title">${item}</div>
+                    <input type="checkbox" id="chk-${type}-${idx}" style="display:none;">
+                </div>
+                <div class="tic-details" id="det-${type}-${idx}">
+                    <label class="question-label">Як часто?</label>
+                    <div class="btn-group freq-group">
+                        ${CONFIG.scales.frequency.map(opt => createBtn(type, idx, 'freq', opt)).join('')}
+                    </div>
+                    <label class="question-label">Наскільки сильно?</label>
+                    <div class="btn-group int-group">
+                        ${CONFIG.scales.intensity.map(opt => createBtn(type, idx, 'int', opt)).join('')}
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function createBtn(type, idx, cat, opt) {
+        return `
+        <label class="radio-label">
+            <input type="radio" name="${cat}-${type}-${idx}" value="${opt.val}" onchange="updateLiveScore()">
+            <div class="btn-tile">
+                <div class="btn-tile-title">${opt.label}</div>
+                <div class="btn-tile-sub">${opt.sub}</div>
+            </div>
+        </label>`;
+    }
+
+    function toggleCard(type, idx) {
+        const chk = document.getElementById(`chk-${type}-${idx}`);
+        const card = document.getElementById(`card-${type}-${idx}`);
+        const det = document.getElementById(`det-${type}-${idx}`);
+        
+        chk.checked = !chk.checked;
+        
+        if(chk.checked) {
+            card.classList.add('active');
+            det.style.display = 'block';
+        } else {
+            card.classList.remove('active');
+            det.style.display = 'none';
+            // Reset radios inside to avoid counting hidden scores
+            det.querySelectorAll('input').forEach(r => r.checked = false);
+            updateLiveScore();
+        }
+    }
+
+    function getScores() {
+        let m = 0, v = 0, activeTics = [];
+        
+        const calc = (type, items) => {
+            let sum = 0;
+            items.forEach((name, i) => {
+                const isChecked = document.getElementById(`chk-${type}-${i}`).checked;
+                if(isChecked) {
+                    const f = document.querySelector(`input[name="freq-${type}-${i}"]:checked`);
+                    const s = document.querySelector(`input[name="int-${type}-${i}"]:checked`);
+                    
+                    // Score = Frequency + Intensity
+                    let val = (f ? parseInt(f.value) : 0) + (s ? parseInt(s.value) : 0);
+                    
+                    if(val > 0) {
+                        sum += val;
+                        activeTics.push({
+                            type: type,
+                            name: name,
+                            freq: f ? f.value : 0,
+                            int: s ? s.value : 0,
+                            score: val
+                        });
+                    }
+                }
+            });
+            return sum;
+        };
+
+        m = calc('motor', CONFIG.tics.motor.items);
+        v = calc('vocal', CONFIG.tics.vocal.items);
+        
+        return { m, v, total: m + v, details: activeTics };
+    }
+
+    function updateLiveScore() {
+        document.getElementById('live-score').innerText = getScores().total;
+    }
+
+    function submitForm() {
+        const child = document.getElementById('childName').value.trim();
+        const parent = document.getElementById('parentName').value.trim();
+
+        if(!child || !parent) return alert("Будь ласка, введіть ім'я дитини та батьків.");
+
+        document.getElementById('loading-overlay').style.display = 'flex';
+
+        const s = getScores();
+        const uniqueID = Date.now().toString();
+        // Generate Link: current folder URL + lookup.html?id=...
+        const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+        const reportLink = `${baseUrl}lookup.html?id=${uniqueID}`;
+
+        const payload = {
+            id: uniqueID,
+            date: document.getElementById('surveyDate').value,
+            childName: child,
+            parentName: parent,
+            motorScore: s.m,
+            vocalScore: s.v,
+            totalScore: s.total,
+            details: JSON.stringify(s.details), // Save list of tics as JSON string
+            link: reportLink
+        };
+
+        fetch(CONFIG.GOOGLE_SCRIPT_URL, {
+            method: 'POST', mode: 'no-cors',
+            body: JSON.stringify(payload)
+        }).then(() => {
+            // Save local for immediate result view
+            localStorage.setItem('ptq_result', JSON.stringify(payload));
+            window.location.href = 'result.html';
+        }).catch(e => {
+            alert("Помилка при відправці: " + e.message);
+            document.getElementById('loading-overlay').style.display = 'none';
+        });
+    }
+</script>
+
+
+
+<script>
+/*function autoFillPTQ() {
+
+// Перенести над script
+<button onclick="autoFillPTQ()" style="position:fixed; bottom:80px; right:20px; z-index:999; background:#dc2626; color:white; border:none; padding:10px 15px; border-radius:50px; font-weight:bold; box-shadow:0 4px 12px rgba(0,0,0,0.3); cursor:pointer;">
+  ⚡ TEST FILL
+</button>
+
+    // 1. Fill Header Info
+    document.getElementById('childName').value = "Тестова Дитина " + Math.floor(Math.random() * 1000);
+    document.getElementById('parentName').value = "Тестові Батьки";
+    document.getElementById('surveyDate').valueAsDate = new Date();
+
+    // 2. Helper to randomly check items
+    const fillRandom = (type, count) => {
+        const totalItems = (type === 'motor') ? CONFIG.tics.motor.items.length : CONFIG.tics.vocal.items.length;
+        
+        for (let i = 0; i < count; i++) {
+            // Pick a random index
+            const randIdx = Math.floor(Math.random() * totalItems);
+            
+            // Toggle the checkbox if not already checked
+            const chk = document.getElementById(`chk-${type}-${randIdx}`);
+            if (!chk.checked) {
+                // Simulate click to trigger UI animations
+                document.querySelector(`#card-${type}-${randIdx} .tic-header`).click();
+                
+                // Random Frequency (1-4)
+                const freqVal = Math.floor(Math.random() * 4) + 1;
+                const freqRadio = document.querySelector(`input[name="freq-${type}-${randIdx}"][value="${freqVal}"]`);
+                if(freqRadio) freqRadio.checked = true;
+
+                // Random Intensity (1-4)
+                const intVal = Math.floor(Math.random() * 4) + 1;
+                const intRadio = document.querySelector(`input[name="int-${type}-${randIdx}"][value="${intVal}"]`);
+                if(intRadio) intRadio.checked = true;
+            }
+        }
+    };
+
+    // 3. Fill 3 random Motor tics and 2 random Vocal tics
+    fillRandom('motor', 3);
+    fillRandom('vocal', 2);
+
+    // 4. Update Score
+    updateLiveScore();
+
+    // 5. Scroll to bottom
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    
+    console.log("✅ Form filled with test data!");
+}*/
+</script>
+
+</body>
+</html>
