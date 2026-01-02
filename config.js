@@ -3,7 +3,7 @@
 const CONFIG = {
     // 1. SYSTEM SETTINGS
     // REPLACE THIS WITH YOUR DEPLOYED GOOGLE SCRIPT URL LATER
-    GOOGLE_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbz2U7L35KVp8gboegOGib-aO-73_zNR-VhAJO9YGP9zhO139RMTXeiL9Iqepy_RHkf-4w/exec", 
+    GOOGLE_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbxwcbKMSOz20XDxqt8i0vacgpL2Qn0mRO6GEe-ZOF3V4PXY8katKBBUYo2bVmMfeEcISQ/exec", 
 
     ui: {
         title: "Опитувальник тиків (PTQ)",
